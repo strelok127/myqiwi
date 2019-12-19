@@ -11,6 +11,7 @@ packages = ["myqiwi"]
 #Зависимости
 requires = ["requests==2.22.0"]
 
+
 # Получение данных из файла version
 about = {}
 path = os.path.join(here, "myqiwi", "__version__.py")
