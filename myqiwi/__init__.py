@@ -20,7 +20,7 @@ class Wallet:
         Parameters
         ----------
         token : str
-            `Ключ Qiwi API`_ пользователя.
+            `Ключ Qiwi API` пользователя.
         number : Optional[str]
             Номер для указанного кошелька.
             По умолчанию - ``None``.
