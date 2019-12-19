@@ -41,6 +41,8 @@ setuptools.setup(
     include_package_data=True,
     python_requires=">=3.5",
     install_requires=requires,
+    zip_safe=False,
 
     project_urls={"Source": about["__url__"]}
     )
+
