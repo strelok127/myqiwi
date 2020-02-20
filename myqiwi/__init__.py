@@ -1,10 +1,11 @@
 import json
 import time
+import random
 
 from myqiwi import apihelper
 
 from .__version__ import __title__, __description__, __url__, __version__
-from .__version__ import __author__, __author_email__
+from .__version__ import __author__, __author_email__, __license__
 
 
 class Wallet:
@@ -168,8 +169,14 @@ class Wallet:
 
         return history
 
-    def generate_pay_form(self, number, sum="", comment=""):
-        a = "https://qiwi.com/payment/form/99?extra%5B%27account%27%5D="
+    def generate_pay_form(self, number=None, username=None, sum="", comment=""):
+        if number != None:
+            form = 99
+        elif username != None:
+            form = 99999
+            number = username
+
+        a = "https://qiwi.com/payment/form/{}?extra%5B%27account%27%5D=".format(form)
         b = str(number) + "&amountInteger=" + str(sum) +"&amountFraction=0"
         c = "&extra%5B%27comment%27%5D=" + comment + "&currency=643"
         d = "&blocked[0]=account"
@@ -181,6 +188,21 @@ class Wallet:
             a += "&blocked[2]=comment"
         
         return a
+    def gen_comment(self, n=4):
+        """
+        Генерация комментария к переводу, для его идентификации.
+
+        -------
+        str
+        """
+        sump = list("1234567890abcdefghinopqrstuvyxwzABCDEFGHIGKLMNOPQUVYXWZ") 
+        random.shuffle(sump)
+        comm = ''.join([random.choice(sump) for x in range(n)])
+        comm1 = ''.join([random.choice(sump) for x in range(n)])  
+        comm2 = ''.join([random.choice(sump) for x in range(n)])
+        comm3 = ''.join([random.choice(sump) for x in range(n)])
+        comm = comm + '-' +  comm1 + '-' + comm2 + '-' + comm3
+        return comm # Возращается сгенерированный комментарий
 
     def send(self, number, sum, comment=None):
         """

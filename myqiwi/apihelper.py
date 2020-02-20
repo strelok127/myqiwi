@@ -13,6 +13,8 @@ def make_request(method_name, headers, method="get", params=None, js=None):
     elif method == "post":
         r = requests.post(url, params=params, headers=headers, json=js)
 
+
+
     if r.status_code == 400:
         raise ValueError("Query syntax error (incorrect data format)")
 
