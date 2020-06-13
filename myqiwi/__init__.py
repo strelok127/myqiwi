@@ -1,14 +1,17 @@
-import json
 import time
 import random
+import requests
 
-from myqiwi import apihelper
+from myqiwi import errors
+
 
 from .__version__ import __title__, __description__, __url__, __version__
 from .__version__ import __author__, __author_email__, __license__
 
 
 class Wallet:
+    warnings = True
+    api_url = "https://edge.qiwi.com/"
     """ 
     This is Wallet Class
     Methods:
@@ -18,7 +21,8 @@ class Wallet:
         generate_pay_form
         send
     """
-    def __init__(self, token, number=None):
+
+    def __init__(self, token: str, phone=None):
         """
         Visa QIWI Кошелек
         Parameters
@@ -30,18 +34,22 @@ class Wallet:
             По умолчанию - ``None``.
             Если не указан, стория работать не будет.
         """
+        if None != phone:
+            if "+" == phone[:1]:
+                phone = phone[1:]
 
-        if isinstance(number, str): 
-            self.num = number.replace("+", "")
-            if self.num.startswith("8") == True:
-                self.num = "7" + self.num[1:]
-        self.headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Authorization': "Bearer " + token
-                        }       
+            if False == phone.isdigit():
+                raise Exception("Invalid phone")
+
+        self.phone = phone
         self.token = token
 
+        self._session = requests.Session()
+        self._session.headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {}".format(token),
+        }
 
     def balance(self, currency=643):
         """
@@ -58,15 +66,15 @@ class Wallet:
         float
             Баланс кошелька.
         """
-        method = "funding-sources/v2/persons/{}/accounts".format(self.num)
-        r = apihelper.make_request(method, self.headers)
-       
-        b = 0
-        for i in r["accounts"]:
-        
-            if i["currency"] == currency:
-                balance = i["balance"]["amount"]
-            b += 1
+        self.__check_phone()
+
+        method = "funding-sources/v2/persons/{}/accounts".format(self.phone)
+        response = self.__request(method)
+
+        for i in response["accounts"]:
+
+            if int(i["currency"]) == currency:
+                balance = float(i["balance"]["amount"])
 
         return balance
 
@@ -79,32 +87,29 @@ class Wallet:
         dict
             Много инфы.
         """
-        p = apihelper.make_request("person-profile/v1/profile/current",
-                                  self.headers)
+        method = "person-profile/v1/profile/current"
+        response = self.__request(method)
 
         profile = {
-            "authInfo": 
-                {
-                "boundEmail": p["authInfo"]["boundEmail"],
-                "ip": p["authInfo"]["ip"]
-                },
-            "contractInfo": 
-                {
-                "blocked": p["contractInfo"]["blocked"],
-                "creationDate": p["contractInfo"]["creationDate"],
-                "identification": p["contractInfo"]["identificationInfo"],
-                "nickname": p["contractInfo"]["nickname"],
-                "smsNotification": p["contractInfo"]["smsNotification"]
-                },
-            "userInfo": 
-                {
-                "defaultPayCurrency": p["userInfo"]["defaultPayCurrency"],
-                "language": p["userInfo"]["language"],
-                "operator": p["userInfo"]["operator"],
-                "phoneHash": p["userInfo"]["phoneHash"]
-                }
-            }
-          
+            "authInfo": {
+                "boundEmail": response["authInfo"]["boundEmail"],
+                "ip": response["authInfo"]["ip"],
+            },
+            "contractInfo": {
+                "blocked": response["contractInfo"]["blocked"],
+                "creationDate": response["contractInfo"]["creationDate"],
+                "identification": response["contractInfo"]["identificationInfo"],
+                "nickname": response["contractInfo"]["nickname"],
+                "smsNotification": response["contractInfo"]["smsNotification"],
+            },
+            "userInfo": {
+                "defaultPayCurrency": response["userInfo"]["defaultPayCurrency"],
+                "language": response["userInfo"]["language"],
+                "operator": response["userInfo"]["operator"],
+                "phoneHash": response["userInfo"]["phoneHash"],
+            },
+        }
+
         return profile
 
     def history(self, rows=20, currency=None, operation=None):
@@ -135,24 +140,25 @@ class Wallet:
         -------
         dict
         """
-        params = {
-                    "rows": rows
-                 }
-        method = "payment-history/v2/persons/{}/payments".format(self.num)
+        self.__check_phone()
 
-        h = apihelper.make_request(method, self.headers, params=params)
+        params = {"rows": rows}
+        method = "payment-history/v2/persons/{}/payments".format(self.phone)
 
-        history = {}
-        a = 0
+        h = self.__request(method, params=params)
+
+        history = []
 
         for i in h["data"]:
             if currency != None:
-                if i["total"]["currency"] != currency: continue
+                if i["total"]["currency"] != currency:
+                    continue
 
             if operation != None:
-                if i["type"] != operation: continue
+                if i["type"] != operation:
+                    continue
 
-            d = {   
+            transaction = {
                 "account": i["account"],
                 "comment": i["comment"],
                 "commission": i["commission"],
@@ -161,15 +167,14 @@ class Wallet:
                 "sum": i["total"],
                 "trmTxnId": i["trmTxnId"],
                 "txnId": i["txnId"],
-                "type": i["type"]
-                }
+                "type": i["type"],
+            }
 
-            history[a] = d
-            a += 1
+            history.append(transaction)
 
         return history
 
-    def generate_pay_form(self, number=None, username=None, sum="", comment=""):
+    def generate_pay_form(self, number=None, username=None, sum=None, comment=""):
         if number != None:
             form = 99
         elif username != None:
@@ -177,42 +182,38 @@ class Wallet:
             number = username
 
         a = "https://qiwi.com/payment/form/{}?extra%5B%27account%27%5D=".format(form)
-        b = str(number) + "&amountInteger=" + str(sum) +"&amountFraction=0"
+        b = str(number) + "&amountInteger=" + str(sum) + "&amountFraction=0"
         c = "&extra%5B%27comment%27%5D=" + comment + "&currency=643"
         d = "&blocked[0]=account"
         a = a + b + c + d
 
-        if sum != "":
+        if None != sum:
             a += "&blocked[1]=sum"
         if comment != "":
             a += "&blocked[2]=comment"
-        
+
         return a
-    def gen_comment(self, n=4):
+
+    def gen_comment(self, lengt=10):
         """
         Генерация комментария к переводу, для его идентификации.
 
         -------
         str
         """
-        sump = list("1234567890abcdefghinopqrstuvyxwzABCDEFGHIGKLMNOPQUVYXWZ") 
-        random.shuffle(sump)
-        comm = ''.join([random.choice(sump) for x in range(n)])
-        comm1 = ''.join([random.choice(sump) for x in range(n)])  
-        comm2 = ''.join([random.choice(sump) for x in range(n)])
-        comm3 = ''.join([random.choice(sump) for x in range(n)])
-        comm = comm + '-' +  comm1 + '-' + comm2 + '-' + comm3
-        return comm # Возращается сгенерированный комментарий
+        symbols = list("1234567890abcdefghinopqrstuvyxwzABCDEFGHIGKLMNOPQUVYXWZ")
+        comment = "".join([random.choice(symbols) for x in range(lengt)])
 
-    def send(self, number, sum, comment=None):
+        return comment  # Возращается сгенерированный комментарий
+
+    def send(self, phone, sum, comment="", currency=643):
         """
         Перевод средств на другой киви кошелёк.
-
         Parameters
         ----------
-        number : str
+        phone : str
             Номер, куда нужно перевести.
-        sum : int
+        sum : float
             Сумма перевода. Обязательно в рублях
         comment : Optional[str]
             Комментарий к платежу
@@ -221,21 +222,57 @@ class Wallet:
         -------
         dict
         """
-        postjson = json.loads('{"id":"","sum": {"amount":"","currency":"643"}, "paymentMethod":{"type":"Account","accountId":"643"}, "comment":"","fields":{"account":""}}')
-        
-        postjson['id'] = str(int(time.time() * 1000))
-        postjson['sum']['amount'] = sum
-        postjson['fields']['account'] = str(number)
-        postjson['comment'] = comment
-        
-
+        # postjson = {
+        #     "id": str(int(time.time() * 1000)),
+        #     "sum": {
+        #         "amount": str(sum),
+        #         "currency": str(currency),
+        #     },
+        #     "paymentMethod": {
+        #         "type": "Account",
+        #         "accountId": "643",
+        #     },
+        #     "comment": comment,
+        #     "fields": {
+        #         "account": ""
+        #     },
+        # }
+        postjson = {
+            "id": str(int(time.time() * 1000)),
+            "sum": {"amount": str(sum), "currency": str(currency)},
+            "paymentMethod": {"type": "Account", "accountId": "643"},
+            "comment": comment,
+            "fields": {"account": str(phone)},
+        }
 
         method = "sinap/api/v2/terms/99/payments"
-        r = apihelper.make_request(method, self.headers, method="post", 
-                                    js=postjson)
+        return self.__request(method, method="post", _json=postjson)
 
-        return r
+    def __check_phone(self):
+        if None == self.phone:
+            raise errors.NeedPhone("For this function need phone")
 
+    def __request(self, method_name, method="get", params=None, _json=None):
+        url = self.api_url + method_name
 
+        if "get" == method:
+            response = self._session.get(url, params=params, json=_json)
 
+        elif "post" == method:
+            # _json = json.loads(_json)
+            response = self._session.post(url, params=params, json=_json)
 
+        if self.warnings:
+            if 400 == response.status_code:
+                raise errors.ArgumentError(response.text)
+
+            elif 401 == response.status_code:
+                raise errors.InvalidToken("Invalid token")
+
+            elif 403 == response.status_code:
+                raise errors.NotHaveEnoughPermissions(response.text)
+
+            elif 404 == response.status_code:
+                raise errors.NoTransaction(response.text)
+
+        return response.json()
