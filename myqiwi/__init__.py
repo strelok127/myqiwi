@@ -194,7 +194,7 @@ class Wallet:
 
         return a
 
-    def gen_comment(self, lengt=10):
+    def gen_comment(self, length=10):
         """
         Генерация комментария к переводу, для его идентификации.
 
@@ -202,7 +202,7 @@ class Wallet:
         str
         """
         symbols = list("1234567890abcdefghinopqrstuvyxwzABCDEFGHIGKLMNOPQUVYXWZ")
-        comment = "".join([random.choice(symbols) for x in range(lengt)])
+        comment = "".join([random.choice(symbols) for x in range(length)])
 
         return comment  # Возращается сгенерированный комментарий
 
@@ -248,9 +248,20 @@ class Wallet:
         method = "sinap/api/v2/terms/99/payments"
         return self.__request(method, method="post", _json=postjson)
 
+
+
+    def search_payment(self, need_sum=0, need_comment=""):
+        """
+        In future
+        """
+        pass
+
+
+
     def __check_phone(self):
         if None == self.phone:
             raise errors.NeedPhone("For this function need phone")
+
 
     def __request(self, method_name, method="get", params=None, _json=None):
         url = self.api_url + method_name
@@ -259,7 +270,6 @@ class Wallet:
             response = self._session.get(url, params=params, json=_json)
 
         elif "post" == method:
-            # _json = json.loads(_json)
             response = self._session.post(url, params=params, json=_json)
 
         if self.warnings:
