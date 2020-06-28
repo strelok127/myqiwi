@@ -1,1 +1,2 @@
-requests==2.22.0
+requests==2.24.0
+random-data==0.1.1

@@ -2,18 +2,15 @@ import os
 import codecs
 import setuptools
 
-# Получение текущей директории
-here = os.path.abspath(os.path.dirname(__file__))
 
-# Название плагина
-packages = ["myqiwi"]
+import myqiwi as lib
 
-# Зависимости
-requires = []  # Список зависимостей
-path_2_requirements = os.path.join(here, "requirements.txt")
-with codecs.open(path_2_requirements, "r", "utf-8") as f:
-    for requir in f.readlines():
-        requires.append(requir[:-2])
+
+if "requirements.txt" in os.listdir("."):
+    with open("requirements.txt", encoding="utf-8") as r:
+        requires = [i.strip() for i in r] # Зависимости
+else:
+    requires = []
 
 
 # Получение данных из файла version
@@ -42,7 +39,7 @@ setuptools.setup(
     author=about["__author__"],
     author_email=about["__author_email__"],
     url=about["__url__"],
-    packages=packages,
+    packages=setuptools.find_packages(),
     include_package_data=True,
     python_requires=">=3.5",
     install_requires=requires,
@@ -58,6 +55,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    package_dir={"myqiwi": "myqiwi"},
     project_urls={"Source": about["__url__"]},
 )
+
+
