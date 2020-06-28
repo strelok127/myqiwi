@@ -5,6 +5,7 @@ import setuptools
 
 import myqiwi as lib
 
+here = os.path.abspath(os.path.dirname(__file__))
 
 if "requirements.txt" in os.listdir("."):
     with open("requirements.txt", encoding="utf-8") as r:
