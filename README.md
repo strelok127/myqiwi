@@ -43,6 +43,7 @@
 # To do
 - [ ] Написать таблицу с методами, описанием и передаваемыми аргументами
 - [ ] Переписать readme
-- [ ] Переписать функциб generate_pay_form
+- [ ] Переписать функцию generate_pay_form
+- [ ] Добавить возможность вывода ошибок в транслите, с помощью библиотеки [transliterate](https://github.com/barseghyanartur/transliterate)
 
 
