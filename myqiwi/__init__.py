@@ -3,7 +3,8 @@ import random
 import requests
 import random_data
 
-from urllib.parse import urlencode
+from transliterate import translit
+
 
 from . import exceptions
 from .__version__ import __title__, __description__, __url__, __version__
@@ -12,6 +13,8 @@ from .__version__ import __author__, __author_email__, __license__
 
 class Wallet:
     warnings = True
+    error_on_translit = True
+
     __API_URl = "https://edge.qiwi.com/"
     __PAYMENT_FORM_URL = "https://qiwi.com/payment/form/"
     """ 
@@ -276,16 +279,20 @@ class Wallet:
             response = self.__session.post(url, params=params, json=_json)
 
         if self.warnings:
+            error_text = response.text
+            if self.error_on_translit:
+                error_text = translit(error_text, "ru", reversed=True)
+
             if 400 == response.status_code:
-                raise exceptions.ArgumentError(response.text)
+                raise exceptions.ArgumentError(error_text)
 
             elif 401 == response.status_code:
                 raise exceptions.InvalidToken("Invalid token")
 
             elif 403 == response.status_code:
-                raise exceptions.NotHaveEnoughPermissions(response.text)
+                raise exceptions.NotHaveEnoughPermissions(error_text)
 
             elif 404 == response.status_code:
-                raise exceptions.NoTransaction(response.text)
+                raise exceptions.NoTransaction(error_text)
 
         return response.json()
