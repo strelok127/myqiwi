@@ -1,17 +1,19 @@
 import time
 import random
 import requests
+import random_data
 
-from myqiwi import errors
+from urllib.parse import urlencode
 
-
+from . import exceptions
 from .__version__ import __title__, __description__, __url__, __version__
 from .__version__ import __author__, __author_email__, __license__
 
 
 class Wallet:
     warnings = True
-    api_url = "https://edge.qiwi.com/"
+    __API_URl = "https://edge.qiwi.com/"
+    __PAYMENT_FORM_URL = "https://qiwi.com/payment/form/"
     """ 
     This is Wallet Class
     Methods:
@@ -20,9 +22,10 @@ class Wallet:
         history
         generate_pay_form
         send
+        search_payment
     """
 
-    def __init__(self, token: str, phone=None):
+    def __init__(self, token: str, phone: int=None):
         """
         Visa QIWI Кошелек
         Parameters
@@ -35,6 +38,7 @@ class Wallet:
             Если не указан, стория работать не будет.
         """
         if None != phone:
+            phone = str(phone)
             if "+" == phone[:1]:
                 phone = phone[1:]
 
@@ -44,8 +48,8 @@ class Wallet:
         self.phone = phone
         self.token = token
 
-        self._session = requests.Session()
-        self._session.headers = {
+        self.__session = requests.Session()
+        self.__session.headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
@@ -173,40 +177,29 @@ class Wallet:
             history.append(transaction)
 
         return history
+    
 
-    def generate_pay_form(self, number=None, username=None, sum=None, comment=""):
-        if number != None:
+    def generate_pay_form(self, phone=None, username=None, sum=None, comment="", currency=643):
+        if phone != None:
             form = 99
         elif username != None:
             form = 99999
-            number = username
+            phone = username
 
-        a = "https://qiwi.com/payment/form/{}?extra%5B%27account%27%5D=".format(form)
-        b = str(number) + "&amountInteger=" + str(sum) + "&amountFraction=0"
-        c = "&extra%5B%27comment%27%5D=" + comment + "&currency=643"
-        d = "&blocked[0]=account"
-        a = a + b + c + d
+        url = self.__PAYMENT_FORM_URL + str(form) + "?"
+        url += "extra%5B%27account%27%5D={}&amountInteger={}".format(phone, sum)
+        url += "&amountFraction=0&extra%5B%27comment%27%5D={}".format(comment)
+        url += "&currency={}&blocked[0]=account".format(currency)
 
         if None != sum:
-            a += "&blocked[1]=sum"
+            url += "&blocked[1]=sum"
         if comment != "":
-            a += "&blocked[2]=comment"
+            url += "&blocked[2]=comment"
 
-        return a
+        return url
 
-    def gen_comment(self, length=10):
-        """
-        Генерация комментария к переводу, для его идентификации.
 
-        -------
-        str
-        """
-        symbols = list("1234567890abcdefghinopqrstuvyxwzABCDEFGHIGKLMNOPQUVYXWZ")
-        comment = "".join([random.choice(symbols) for x in range(length)])
-
-        return comment  # Возращается сгенерированный комментарий
-
-    def send(self, phone, sum, comment="", currency=643):
+    def send(self, phone, sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
@@ -222,21 +215,6 @@ class Wallet:
         -------
         dict
         """
-        # postjson = {
-        #     "id": str(int(time.time() * 1000)),
-        #     "sum": {
-        #         "amount": str(sum),
-        #         "currency": str(currency),
-        #     },
-        #     "paymentMethod": {
-        #         "type": "Account",
-        #         "accountId": "643",
-        #     },
-        #     "comment": comment,
-        #     "fields": {
-        #         "account": ""
-        #     },
-        # }
         postjson = {
             "id": str(int(time.time() * 1000)),
             "sum": {"amount": str(sum), "currency": str(currency)},
@@ -250,11 +228,36 @@ class Wallet:
 
 
 
-    def search_payment(self, need_sum=0, need_comment=""):
-        """
-        In future
-        """
-        pass
+    def search_payment(self, comment, need_sum=0, currency=643):
+        payments = self.history(rows=50, currency=currency, operation="IN")
+        response = {"status": False}
+
+        sum = 0
+        amount_transactions = 0
+
+        for payment in payments:
+            if comment == payment["comment"]:
+                amount_transactions += 1
+                sum += payment["sum"]["amount"]
+
+
+        if (0 == need_sum and 0 < sum) or (0 < need_sum and need_sum <= sum):
+            response["sum"] = sum
+            response["status"] = True
+            response["amount_transactions"] = amount_transactions
+
+
+        return response
+
+    def gen_payment(self, sum):
+        phone = self.phone
+        comment = random_data.etc.password()
+        link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
+
+        response = {"comment": comment, "link": link}
+        
+        return response
+
 
 
 
@@ -264,25 +267,25 @@ class Wallet:
 
 
     def __request(self, method_name, method="get", params=None, _json=None):
-        url = self.api_url + method_name
+        url = self.__API_URl + method_name
 
         if "get" == method:
-            response = self._session.get(url, params=params, json=_json)
+            response = self.__session.get(url, params=params, json=_json)
 
         elif "post" == method:
-            response = self._session.post(url, params=params, json=_json)
+            response = self.__session.post(url, params=params, json=_json)
 
         if self.warnings:
             if 400 == response.status_code:
-                raise errors.ArgumentError(response.text)
+                raise exceptions.ArgumentError(response.text)
 
             elif 401 == response.status_code:
-                raise errors.InvalidToken("Invalid token")
+                raise exceptions.InvalidToken("Invalid token")
 
             elif 403 == response.status_code:
-                raise errors.NotHaveEnoughPermissions(response.text)
+                raise exceptions.NotHaveEnoughPermissions(response.text)
 
             elif 404 == response.status_code:
-                raise errors.NoTransaction(response.text)
+                raise exceptions.NoTransaction(response.text)
 
         return response.json()

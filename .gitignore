@@ -9,6 +9,8 @@ python
 # C extensions
 *.so
 
+tests.py
+
 # Distribution / packaging
 .Python
 build/
