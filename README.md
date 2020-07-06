@@ -1,6 +1,6 @@
 # myqiwi
 
-[![Build Status](https://travis-ci.org/daveusa31/myqiwi.svg?branch=master)](https://travis-ci.org/daveusa31/myqiwi)
+[![Build Status](https://travis-ci.com/daveusa31/myqiwi.svg?branch=master)](https://travis-ci.com/daveusa31/myqiwi)
 [![PyPi Package Version](https://img.shields.io/pypi/v/myqiwi.svg?style=flat-square)](https://pypi.python.org/pypi/myqiwi)
 [![PyPi status](https://img.shields.io/pypi/status/myqiwi.svg?style=flat-square)](https://pypi.python.org/pypi/myqiwi)
 [![Downloads](https://pepy.tech/badge/myqiwi)](https://pepy.tech/project/myqiwi)
