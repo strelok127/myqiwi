@@ -67,4 +67,4 @@
 - [ ] Написать таблицу с методами, описанием и передаваемыми аргументами
 - [ ] Переписать readme
 - [ ] Переписать функцию generate_pay_form
-- [ ] Добавить возможность вывода ошибок в транслите, с помощью библиотеки [transliterate](https://github.com/barseghyanartur/transliterate)
+- [X] Добавить возможность вывода ошибок в транслите, с помощью библиотеки [transliterate](https://github.com/barseghyanartur/transliterate) 04.07.20
