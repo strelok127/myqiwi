@@ -1,5 +1,4 @@
 import time
-import random
 import requests
 import random_data
 
@@ -7,8 +6,7 @@ from transliterate import translit
 
 
 from . import exceptions
-from .__version__ import __title__, __description__, __url__, __version__
-from .__version__ import __author__, __author_email__, __license__
+
 
 
 class Wallet:
