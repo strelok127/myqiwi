@@ -57,9 +57,9 @@ print("Ссылку на форму с оплатой: {}".format(resp["link"]))
 payment = qiwi.search_payment(resp["comment"], need_sum=need_sum)
 
 if payment["status"]:
-	print("Поступило пополнение на сумму {} рублей!".format(payment["sum"]))
+    print("Поступило пополнение на сумму {} рублей!".format(payment["sum"]))
 else:
-	print("Пополнения не обнаружено! :(")
+    print("Пополнения не обнаружено! :(")
 ```
 
 
