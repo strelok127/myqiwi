@@ -1,11 +1,5 @@
 import os
-import codecs
 import setuptools
-
-
-import myqiwi as lib
-
-here = os.path.abspath(os.path.dirname(__file__))
 
 
 with open("requirements.txt", "r", encoding="utf-8") as r:
@@ -15,27 +9,19 @@ with open("README.md", "r", encoding="utf-8") as f:
     readme = f.read()
 
 
-about = {}
-path = os.path.join(here, "myqiwi", "__version__.py")
-with codecs.open(path, "r", "utf-8") as f:
-    exec(f.read(), about)
-
-
 
 setuptools.setup(
-    name=about["__title__"],
-    version=about["__version__"],
-    description=about["__description__"],
+    name="myqiwi",
+    version="0.1.1",
+    description="Python qiwi api for Humans.",
     long_description=readme,
     long_description_content_type="text/markdown",
-    author=about["__author__"],
-    author_email=about["__author_email__"],
-    url=about["__url__"],
+    author="daveusa31",
     packages=setuptools.find_packages(),
     include_package_data=True,
     python_requires=">=3.5",
     install_requires=requires,
-    license=about["__license__"],
+    license="MIT",
     zip_safe=False,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -47,5 +33,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    project_urls={"Source": about["__url__"]},
+    project_urls={"Source": "https://github.com/daveusa31/myqiwi"},
 )
