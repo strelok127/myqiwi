@@ -19,8 +19,8 @@
 Использование
 ======
 ```python
-    import myqiwi
-    wallet = myqiwi.Wallet(token, phone="79001234567")
+import myqiwi
+wallet = myqiwi.Wallet(token, phone="79001234567")
 ```
 
 Быстрый туториал
@@ -29,42 +29,42 @@
 Получить текущий баланс
 ----------------
 ```python
-    print(wallet.balance())
+print(wallet.balance())
 ```
 
 Отправка платежа
 ----------------
 ```python
-	payee = "7999778909" # Получатель платежа
-	sum = 50 # Сумма перевода. Обязательно в рублях!
-	comment = "Перевод сделан с помощью библиотеки myqiwi" # Необязательный
-								#аргумент
+payee = "7999778909" # Получатель платежа
+sum = 50 # Сумма перевода. Обязательно в рублях!
+comment = "Перевод сделан с помощью библиотеки myqiwi" # Необязательный аргумент
 
-    wallet.send(payee, sum, comment)
+wallet.send(payee, sum, comment)
 ```
 
 Генерация комментария и ожидание платежа
 ----------------
+
 ```python
-	need_sum = 100
-	resp = qiwi.gen_payment(need_sum) # Генерируем комментарий и ссылку к платежу
+need_sum = 100
+resp = qiwi.gen_payment(need_sum) # Генерируем комментарий и ссылку к платежу
 
-	text = "Переведите {} рублей на номер {}, указав в комментариях {}"
-	text = text.format(need_sum, phone, resp["comment"])
-	print(text)
-	print("Ссылку на форму с оплатой: {}".format(resp["link"]))
+text = "Переведите {} рублей на номер {}, указав в комментариях {}"
+text = text.format(need_sum, phone, resp["comment"])
+print(text)
+print("Ссылку на форму с оплатой: {}".format(resp["link"]))
 
-	payment = qiwi.search_payment(resp["comment"], need_sum=need_sum)
+payment = qiwi.search_payment(resp["comment"], need_sum=need_sum)
 
-	if payment["status"]:
-		print("Поступило пополнение на сумму {} рублей!".format(payment["sum"]))
-	else:
-		print("Пополнения не обнаружено! :(")
+if payment["status"]:
+	print("Поступило пополнение на сумму {} рублей!".format(payment["sum"]))
+else:
+	print("Пополнения не обнаружено! :(")
 ```
 
 
 # To do
 - [ ] Написать таблицу с методами, описанием и передаваемыми аргументами
 - [ ] Переписать readme
-- [ ] Переписать функцию generate_pay_form
+- [X] Переписать функцию generate_pay_form 08.07.20
 - [X] Добавить возможность вывода ошибок в транслите, с помощью библиотеки [transliterate](https://github.com/barseghyanartur/transliterate) 04.07.20
