@@ -1,13 +1,11 @@
-import os
 import setuptools
 
 
 with open("requirements.txt", "r", encoding="utf-8") as r:
-    requires = [i.strip() for i in r] # Зависимости
+    requires = [i.strip() for i in r]  # Зависимости
 
 with open("README.md", "r", encoding="utf-8") as f:
     readme = f.read()
-
 
 
 setuptools.setup(
