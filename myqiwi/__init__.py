@@ -38,12 +38,12 @@ class Wallet:
             По умолчанию - ``None``.
             Если не указан, стория работать не будет.
         """
-        if None != phone:
+        if phone:
             phone = str(phone)
             if "+" == phone[:1]:
                 phone = phone[1:]
 
-            if False == phone.isdigit():
+            if not phone.isdigit():
                 raise Exception("Invalid phone")
 
         self.phone = phone
@@ -155,11 +155,11 @@ class Wallet:
         history = []
 
         for i in h["data"]:
-            if currency != None:
+            if currency:
                 if i["total"]["currency"] != currency:
                     continue
 
-            if operation != None:
+            if operation:
                 if i["type"] != operation:
                     continue
 
@@ -181,9 +181,9 @@ class Wallet:
     
 
     def generate_pay_form(self, phone=None, username=None, sum=None, comment="", currency=643):
-        if phone != None:
+        if phone:
             form = 99
-        elif username != None:
+        elif username:
             form = 99999
             phone = username
 
@@ -192,9 +192,9 @@ class Wallet:
         url += "&amountFraction=0&extra%5B%27comment%27%5D={}".format(comment)
         url += "&currency={}&blocked[0]=account".format(currency)
 
-        if None != sum:
+        if sum:
             url += "&blocked[1]=sum"
-        if comment != "":
+        if comment:
             url += "&blocked[2]=comment"
 
         return url
@@ -263,8 +263,8 @@ class Wallet:
 
 
     def __check_phone(self):
-        if None == self.phone:
-            raise errors.NeedPhone("For this function need phone")
+        if not self.phone:
+            raise exceptions.NeedPhone("For this function need phone")
 
 
     def __request(self, method_name, method="get", params=None, _json=None):
@@ -284,13 +284,13 @@ class Wallet:
             if 400 == response.status_code:
                 raise exceptions.ArgumentError(error_text)
 
-            elif 401 == response.status_code:
+            if 401 == response.status_code:
                 raise exceptions.InvalidToken("Invalid token")
 
-            elif 403 == response.status_code:
+            if 403 == response.status_code:
                 raise exceptions.NotHaveEnoughPermissions(error_text)
 
-            elif 404 == response.status_code:
+            if 404 == response.status_code:
                 raise exceptions.NoTransaction(error_text)
 
         return response.json()
