@@ -24,19 +24,23 @@ class Wallet:
         generate_pay_form
         send
         search_payment
+        gen_payment
     """
 
-    def __init__(self, token: str, phone: int=None):
+    def __init__(self, token: str, phone: int=None, proxy: str=None):
         """
         Visa QIWI Кошелек
         Parameters
         ----------
         token : str
             `Ключ Qiwi API` пользователя.
-        number : Optional[str]
+        number : Optional[int]
             Номер для указанного кошелька.
             По умолчанию - ``None``.
             Если не указан, стория работать не будет.
+        proxy : Optional[str]
+            Прокси.
+            Появится будущем...
         """
         if phone:
             phone = str(phone)
