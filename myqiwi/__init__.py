@@ -70,6 +70,10 @@ class Wallet:
 
         return balance
 
+    @property
+    def phone(self):
+        return self.__phone
+
     def profile(self):
         """
         Профиль кошелька.
