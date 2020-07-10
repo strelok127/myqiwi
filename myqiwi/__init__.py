@@ -217,6 +217,7 @@ class Wallet:
         link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
 
         response = {"comment": comment, "link": link}
+        return response
 
 
     def __request(self, method_name, method="get", params=None, _json=None):
