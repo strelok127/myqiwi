@@ -20,7 +20,7 @@
 ======
 ```python
 import myqiwi
-wallet = myqiwi.Wallet(token, phone="79001234567")
+wallet = myqiwi.Wallet(token)
 ```
 
 Быстрый туториал

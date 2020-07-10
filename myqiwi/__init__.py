@@ -27,38 +27,25 @@ class Wallet:
         gen_payment
     """
 
-    def __init__(self, token: str, phone: int=None, proxy: str=None):
+    def __init__(self, token: str, proxy: str=None):
         """
         Visa QIWI Кошелек
         Parameters
         ----------
         token : str
             `Ключ Qiwi API` пользователя.
-        number : Optional[int]
-            Номер для указанного кошелька.
-            По умолчанию - ``None``.
-            Если не указан, стория работать не будет.
         proxy : Optional[str]
             Прокси.
             Появится будущем...
         """
-        if phone:
-            phone = str(phone)
-            if "+" == phone[:1]:
-                phone = phone[1:]
-
-            if not phone.isdigit():
-                raise Exception("Invalid phone")
-
-        self.phone = phone
-        self.token = token
-
         self.__session = requests.Session()
         self.__session.headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
         }
+
+        self.__phone = self.profile()["contractInfo"]["contractId"]
 
     def balance(self, currency=643):
         """
@@ -75,9 +62,7 @@ class Wallet:
         float
             Баланс кошелька.
         """
-        self.__check_phone()
-
-        method = "funding-sources/v2/persons/{}/accounts".format(self.phone)
+        method = "funding-sources/v2/persons/{}/accounts".format(self.__phone)
         response = self.__request(method)
 
         for i in response["accounts"]:
@@ -99,27 +84,7 @@ class Wallet:
         method = "person-profile/v1/profile/current"
         response = self.__request(method)
 
-        profile = {
-            "authInfo": {
-                "boundEmail": response["authInfo"]["boundEmail"],
-                "ip": response["authInfo"]["ip"],
-            },
-            "contractInfo": {
-                "blocked": response["contractInfo"]["blocked"],
-                "creationDate": response["contractInfo"]["creationDate"],
-                "identification": response["contractInfo"]["identificationInfo"],
-                "nickname": response["contractInfo"]["nickname"],
-                "smsNotification": response["contractInfo"]["smsNotification"],
-            },
-            "userInfo": {
-                "defaultPayCurrency": response["userInfo"]["defaultPayCurrency"],
-                "language": response["userInfo"]["language"],
-                "operator": response["userInfo"]["operator"],
-                "phoneHash": response["userInfo"]["phoneHash"],
-            },
-        }
-
-        return profile
+        return response
 
     def history(self, rows=20, currency=None, operation=None):
         """
@@ -149,10 +114,8 @@ class Wallet:
         -------
         dict
         """
-        self.__check_phone()
-
         params = {"rows": rows}
-        method = "payment-history/v2/persons/{}/payments".format(self.phone)
+        method = "payment-history/v2/persons/{}/payments".format(self.__phone)
 
         h = self.__request(method, params=params)
 
@@ -255,7 +218,7 @@ class Wallet:
         return response
 
     def gen_payment(self, sum):
-        phone = self.phone
+        phone = self.__phone
         comment = random_data.etc.password()
         link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
 
@@ -263,12 +226,6 @@ class Wallet:
         
         return response
 
-
-
-
-    def __check_phone(self):
-        if not self.phone:
-            raise exceptions.NeedPhone("For this function need phone")
 
 
     def __request(self, method_name, method="get", params=None, _json=None):
