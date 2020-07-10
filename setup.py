@@ -10,7 +10,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setuptools.setup(
     name="myqiwi",
-    version="0.1.2",
+    version="0.1.3",
     description="Python qiwi api for Humans.",
     long_description=readme,
     long_description_content_type="text/markdown",
