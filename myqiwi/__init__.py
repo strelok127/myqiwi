@@ -4,9 +4,7 @@ import random_data
 
 from transliterate import translit
 
-
 from . import exceptions
-
 
 
 class Wallet:
@@ -27,6 +25,7 @@ class Wallet:
         gen_payment
     """
 
+
     def __init__(self, token: str, proxy: str=None):
         """
         Visa QIWI Кошелек
@@ -44,7 +43,6 @@ class Wallet:
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
         }
-
         self.__phone = self.profile()["contractInfo"]["contractId"]
 
     def balance(self, currency=643):
@@ -145,9 +143,10 @@ class Wallet:
             history.append(transaction)
 
         return history
-    
 
-    def generate_pay_form(self, phone=None, username=None, sum=None, comment="", currency=643):
+    def generate_pay_form(
+        self, phone=None, username=None, sum=None, comment="", currency=643
+    ):
         if phone:
             form = 99
         elif username:
@@ -165,7 +164,6 @@ class Wallet:
             url += "&blocked[2]=comment"
 
         return url
-
 
     def send(self, phone, sum, comment=None, currency=643):
         """
@@ -194,8 +192,6 @@ class Wallet:
         method = "sinap/api/v2/terms/99/payments"
         return self.__request(method, method="post", _json=postjson)
 
-
-
     def search_payment(self, comment, need_sum=0, currency=643):
         payments = self.history(rows=50, currency=currency, operation="IN")
         response = {"status": False}
@@ -208,12 +204,10 @@ class Wallet:
                 amount_transactions += 1
                 sum += payment["sum"]["amount"]
 
-
         if (0 == need_sum and 0 < sum) or (0 < need_sum and need_sum <= sum):
             response["sum"] = sum
             response["status"] = True
             response["amount_transactions"] = amount_transactions
-
 
         return response
 
@@ -223,9 +217,6 @@ class Wallet:
         link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
 
         response = {"comment": comment, "link": link}
-        
-        return response
-
 
 
     def __request(self, method_name, method="get", params=None, _json=None):
