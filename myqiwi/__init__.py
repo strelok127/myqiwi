@@ -215,7 +215,7 @@ class Wallet:
 
         return response
 
-    def gen_payment(self, sum):
+    def gen_payment(self, sum=None):
         phone = self.__phone
         comment = random_data.etc.password()
         link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
