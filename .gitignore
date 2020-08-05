@@ -10,6 +10,7 @@ python
 *.so
 
 tests.py
+.idea
 
 # Distribution / packaging
 .Python

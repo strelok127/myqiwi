@@ -4,14 +4,13 @@ import random_data
 
 from transliterate import translit
 
+from . import request
 from . import exceptions
 
 
 class Wallet:
-    warnings = True
     error_on_translit = True
 
-    __API_URl = "https://edge.qiwi.com/"
     __PAYMENT_FORM_URL = "https://qiwi.com/payment/form/"
     """ 
     This is Wallet Class
@@ -37,8 +36,7 @@ class Wallet:
             Прокси.
             Появится будущем...
         """
-        self.__session = requests.Session()
-        self.__session.headers = {
+        request.session = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
@@ -224,30 +222,4 @@ class Wallet:
         return response
 
 
-    def __request(self, method_name, method="get", params=None, _json=None):
-        url = self.__API_URl + method_name
 
-        if "get" == method:
-            response = self.__session.get(url, params=params, json=_json)
-
-        elif "post" == method:
-            response = self.__session.post(url, params=params, json=_json)
-
-        if self.warnings:
-            error_text = response.text
-            if self.error_on_translit:
-                error_text = translit(error_text, "ru", reversed=True)
-
-            if 400 == response.status_code:
-                raise exceptions.ArgumentError(error_text)
-
-            if 401 == response.status_code:
-                raise exceptions.InvalidToken("Invalid token")
-
-            if 403 == response.status_code:
-                raise exceptions.NotHaveEnoughPermissions(error_text)
-
-            if 404 == response.status_code:
-                raise exceptions.NoTransaction(error_text)
-
-        return response.json()
