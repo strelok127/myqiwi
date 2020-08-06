@@ -18,7 +18,7 @@ class Wallet:
         gen_payment
     """
 
-    def __init__(self, token: str, proxy: str = None):
+    def __init__(self, token: str, proxy: dict = None):
         """
         Visa QIWI Кошелек
         Parameters
@@ -30,13 +30,17 @@ class Wallet:
             Появится будущем...
         """
         request.proxy = proxy
-        request.session = {
+        request.headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
         }
 
         self.__phone = self.profile()["contractInfo"]["contractId"]
+
+    @property
+    def phone(self):
+        return self.__phone
 
     def balance(self, currency=643):
         """
@@ -53,23 +57,17 @@ class Wallet:
         float
             Баланс кошелька.
         """
-        path = "funding-sources/v2/persons/{}/accounts".format(self.__phone)
+        path = "funding-sources/v2/persons/{}/accounts".format(self.phone)
         response = request.send(path)
 
-        info = response["accounts"]["currency"][str(currency)]
-        balance = float(info["balance"]["amount"])
-        # for i in response["accounts"]:
-        #     if int(i["currency"]) == currency:
-        #         balance = float(i["balance"]["amount"])
+        for i in response["accounts"]:
+            if int(i["currency"]) == currency:
+                balance = float(i["balance"]["amount"])
 
         return balance
 
-    @property
-    def phone(self):
-        return self.__phone
-
     @staticmethod
-    def profile(self):
+    def profile():
         """
         Профиль кошелька.
 
@@ -88,7 +86,8 @@ class Wallet:
         История платежей
         Warning
         -------
-        Максимальная интенсивность запросов истории платежей - не более 100 запросов в минуту
+        Максимальная интенсивность запросов истории платежей -
+        не более 100 запросов в минуту
          для одного и того же номера кошелька.
         При превышении доступ к API блокируется на 5 минут.
 
@@ -112,39 +111,38 @@ class Wallet:
         dict
         """
         params = {"rows": rows}
-        path = "payment-history/v2/persons/{}/payments".format(self.__phone)
+        path = "payment-history/v2/persons/{}/payments".format(self.phone)
 
         _history = request.send(path, params=params)
 
         history = []
 
-        for i in _history["data"]:
+        for transaction in _history["data"]:
             if currency:
-                if i["total"]["currency"] != currency:
+                if transaction["total"]["currency"] != currency:
                     continue
 
             if operation:
-                if i["type"] != operation:
+                if transaction["type"] != operation:
                     continue
 
             transaction = {
-                "account": i["account"],
-                "comment": i["comment"],
-                "commission": i["commission"],
-                "date": i["date"],
-                "status": i["statusText"],
-                "sum": i["total"],
-                "trmTxnId": i["trmTxnId"],
-                "txnId": i["txnId"],
-                "type": i["type"],
+                "account": transaction["account"],
+                "comment": transaction["comment"],
+                "commission": transaction["commission"],
+                "date": transaction["date"],
+                "status": transaction["statusText"],
+                "sum": transaction["total"],
+                "trmTxnId": transaction["trmTxnId"],
+                "txnId": transaction["txnId"],
+                "type": transaction["type"],
             }
-
             history.append(transaction)
 
         return history
 
     def generate_pay_form(
-            self, phone=None, username=None, sum=None, comment="", currency=643
+            self, phone=None, username=None, _sum=None, comment="", currency=643
     ):
         if phone:
             form = 99
@@ -153,39 +151,50 @@ class Wallet:
             phone = username
 
         url = self.__PAYMENT_FORM_URL + str(form) + "?"
-        url += "extra%5B%27account%27%5D={}&amountInteger={}".format(phone, sum)
-        url += "&amountFraction=0&extra%5B%27comment%27%5D={}".format(comment)
+        url += "extra%5B%27account%27%5D={}".format(phone)
+        url += "&amountInteger={}&amountFraction=0&".format(_sum)
+        url += "extra%5B%27comment%27%5D={}".format(comment)
         url += "&currency={}&blocked[0]=account".format(currency)
 
-        if sum:
+        if _sum:
             url += "&blocked[1]=sum"
         if comment:
             url += "&blocked[2]=comment"
 
         return url
 
-    def send(self, phone, sum, comment=None, currency=643):
+    @staticmethod
+    def send(phone, _sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
         ----------
         phone : str
             Номер, куда нужно перевести.
-        sum : float
+        _sum : currency
             Сумма перевода. Обязательно в рублях
         comment : Optional[str]
             Комментарий к платежу
-        
+        currency : optional[int]
+            ID валюты в ``number-3 ISO-4217``, с которорой будут показываться
+            переводы.
+            По умолчанию None, значит будут все переводы
+            Например, 643 для российского рубля.
+
         Returns
         -------
         dict
+        :param comment:
+        :param _sum:
+        :param phone:
+        :param currency:
         """
         _json = {
             "id": str(int(time.time() * 1000)),
-            "sum": {"amount": str(sum), "currency": str(currency)},
+            "sum": {"amount": str(_sum), "currency": str(currency)},
             "paymentMethod": {"type": "Account", "accountId": "643"},
             "comment": comment,
-            "fields": {"account": str(phone)},
+            "fields": {"account": str(phone),},
         }
 
         path = "sinap/api/v2/terms/99/payments"
@@ -203,17 +212,17 @@ class Wallet:
                 amount_transactions += 1
                 _sum += payment["sum"]["amount"]
 
-        if (0 == need_sum and 0 < _sum) or (0 < need_sum and need_sum <= _sum):
+        if (0 == need_sum and 0 < _sum) or (0 < need_sum <= _sum):
             response["sum"] = _sum
             response["status"] = True
             response["amount_transactions"] = amount_transactions
 
         return response
 
-    def gen_payment(self, sum=None):
+    def gen_payment(self, _sum=None):
         phone = self.__phone
         comment = random_data.etc.password()
-        link = self.generate_pay_form(phone=phone, sum=sum, comment=comment)
+        link = self.generate_pay_form(phone=phone, _sum=_sum, comment=comment)
 
         response = {"comment": comment, "link": link}
         return response
