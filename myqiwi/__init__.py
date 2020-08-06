@@ -1,16 +1,10 @@
 import time
-import requests
 import random_data
 
-from transliterate import translit
-
 from . import request
-from . import exceptions
 
 
 class Wallet:
-    error_on_translit = True
-
     __PAYMENT_FORM_URL = "https://qiwi.com/payment/form/"
     """ 
     This is Wallet Class
@@ -24,8 +18,7 @@ class Wallet:
         gen_payment
     """
 
-
-    def __init__(self, token: str, proxy: str=None):
+    def __init__(self, token: str, proxy: str = None):
         """
         Visa QIWI Кошелек
         Parameters
@@ -36,11 +29,13 @@ class Wallet:
             Прокси.
             Появится будущем...
         """
+        request.proxy = proxy
         request.session = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
         }
+
         self.__phone = self.profile()["contractInfo"]["contractId"]
 
     def balance(self, currency=643):
@@ -58,13 +53,14 @@ class Wallet:
         float
             Баланс кошелька.
         """
-        method = "funding-sources/v2/persons/{}/accounts".format(self.__phone)
-        response = self.__request(method)
+        path = "funding-sources/v2/persons/{}/accounts".format(self.__phone)
+        response = request.send(path)
 
-        for i in response["accounts"]:
-
-            if int(i["currency"]) == currency:
-                balance = float(i["balance"]["amount"])
+        info = response["accounts"]["currency"][str(currency)]
+        balance = float(info["balance"]["amount"])
+        # for i in response["accounts"]:
+        #     if int(i["currency"]) == currency:
+        #         balance = float(i["balance"]["amount"])
 
         return balance
 
@@ -72,6 +68,7 @@ class Wallet:
     def phone(self):
         return self.__phone
 
+    @staticmethod
     def profile(self):
         """
         Профиль кошелька.
@@ -81,8 +78,8 @@ class Wallet:
         dict
             Много инфы.
         """
-        method = "person-profile/v1/profile/current"
-        response = self.__request(method)
+        path = "person-profile/v1/profile/current"
+        response = request.send(path)
 
         return response
 
@@ -115,13 +112,13 @@ class Wallet:
         dict
         """
         params = {"rows": rows}
-        method = "payment-history/v2/persons/{}/payments".format(self.__phone)
+        path = "payment-history/v2/persons/{}/payments".format(self.__phone)
 
-        h = self.__request(method, params=params)
+        _history = request.send(path, params=params)
 
         history = []
 
-        for i in h["data"]:
+        for i in _history["data"]:
             if currency:
                 if i["total"]["currency"] != currency:
                     continue
@@ -147,11 +144,11 @@ class Wallet:
         return history
 
     def generate_pay_form(
-        self, phone=None, username=None, sum=None, comment="", currency=643
+            self, phone=None, username=None, sum=None, comment="", currency=643
     ):
         if phone:
             form = 99
-        elif username:
+        else:
             form = 99999
             phone = username
 
@@ -183,7 +180,7 @@ class Wallet:
         -------
         dict
         """
-        postjson = {
+        _json = {
             "id": str(int(time.time() * 1000)),
             "sum": {"amount": str(sum), "currency": str(currency)},
             "paymentMethod": {"type": "Account", "accountId": "643"},
@@ -191,23 +188,23 @@ class Wallet:
             "fields": {"account": str(phone)},
         }
 
-        method = "sinap/api/v2/terms/99/payments"
-        return self.__request(method, method="post", _json=postjson)
+        path = "sinap/api/v2/terms/99/payments"
+        return request.send(path, method="post", json=_json)
 
     def search_payment(self, comment, need_sum=0, currency=643):
         payments = self.history(rows=50, currency=currency, operation="IN")
         response = {"status": False}
 
-        sum = 0
+        _sum = 0
         amount_transactions = 0
 
         for payment in payments:
             if comment == payment["comment"]:
                 amount_transactions += 1
-                sum += payment["sum"]["amount"]
+                _sum += payment["sum"]["amount"]
 
-        if (0 == need_sum and 0 < sum) or (0 < need_sum and need_sum <= sum):
-            response["sum"] = sum
+        if (0 == need_sum and 0 < _sum) or (0 < need_sum and need_sum <= _sum):
+            response["sum"] = _sum
             response["status"] = True
             response["amount_transactions"] = amount_transactions
 
@@ -220,6 +217,3 @@ class Wallet:
 
         response = {"comment": comment, "link": link}
         return response
-
-
-
