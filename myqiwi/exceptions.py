@@ -16,3 +16,7 @@ class NoTransaction(Exception):
 
 class NeedPhone(Exception):
     pass
+
+
+class CurrencyInvalid(Exception):
+    pass
