@@ -1,4 +1,4 @@
 pysocks==1.7.1
 requests==2.24.0
-random-data==0.1.5
+random-data==0.1.6
 transliterate==1.10.2
