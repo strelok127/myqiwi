@@ -11,11 +11,7 @@ proxy = {}
 
 def send(path, params=None, method="get", json=None):
     url = API_URl + path
-
-    request_method = getattr(requests, method)  # Метод get или post
-    response = request_method(url,
-                              params=params, json=json,
-                              headers=headers, proxies=proxy)
+    response = requests.request(method.upper(), url, params=params, json=json, headers=headers, proxies=proxy)
 
     if warnings:
         error_text = response.text
