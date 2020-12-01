@@ -175,7 +175,7 @@ class Wallet:
         return url
 
     @staticmethod
-    def send(phone, _sum, comment=None, currency=643):
+    def send_money(phone, _sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
