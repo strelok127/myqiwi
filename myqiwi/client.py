@@ -38,12 +38,12 @@ class Wallet:
         }
 
         profile = self.profile()
-        self.__phone = profile["contractInfo"]["contractId"]
+        self.__number = profile["contractInfo"]["contractId"]
         self.__username = profile["contractInfo"]["nickname"]["nickname"]
 
     @property
     def phone(self):
-        return self.__phone
+        return self.__number
 
     @property
     def username(self):
