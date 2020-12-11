@@ -38,12 +38,12 @@ class Wallet:
         }
 
         profile = self.profile()
-        self.__phone = profile["contractInfo"]["contractId"]
+        self.__number = profile["contractInfo"]["contractId"]
         self.__username = profile["contractInfo"]["nickname"]["nickname"]
 
     @property
-    def phone(self):
-        return self.__phone
+    def number(self):
+        return self.__number
 
     @property
     def username(self):
@@ -64,7 +64,7 @@ class Wallet:
         float
             Баланс кошелька.
         """
-        path = "funding-sources/v2/persons/{}/accounts".format(self.phone)
+        path = "funding-sources/v2/persons/{}/accounts".format(self.number)
         response = request.send(path)
 
         for i in response["accounts"]:
@@ -122,7 +122,7 @@ class Wallet:
         dict
         """
         params = {"rows": rows}
-        path = "payment-history/v2/persons/{}/payments".format(self.phone)
+        path = "payment-history/v2/persons/{}/payments".format(self.number)
 
         _history = request.send(path, params=params)
 
@@ -175,12 +175,12 @@ class Wallet:
         return url
 
     @staticmethod
-    def send_money(phone, _sum, comment=None, currency=643):
+    def send_money(number, _sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
         ----------
-        phone : str
+        number : str
             Номер, куда нужно перевести.
         _sum : currency
             Сумма перевода. Обязательно в рублях
@@ -197,7 +197,7 @@ class Wallet:
         dict
         :param comment:
         :param _sum:
-        :param phone:
+        :param number:
         :param currency:
         """
         _json = {
@@ -205,7 +205,7 @@ class Wallet:
             "sum": {"amount": str(_sum), "currency": str(currency)},
             "paymentMethod": {"type": "Account", "accountId": "643"},
             "comment": comment,
-            "fields": {"account": str(phone)}
+            "fields": {"account": str(number)}
         }
 
         path = "sinap/api/v2/terms/99/payments"
@@ -231,9 +231,8 @@ class Wallet:
         return response
 
     def gen_payment(self, _sum=None):
-        phone = self.__phone
         comment = random_data.etc.password()
-        link = self.generate_pay_form(phone=phone, _sum=_sum, comment=comment)
+        link = self.generate_pay_form(phone=self.number, _sum=_sum, comment=comment)
 
         response = {"comment": comment, "link": link}
         return response
