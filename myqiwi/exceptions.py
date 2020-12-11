@@ -1,22 +1,29 @@
-class ArgumentError(Exception):
+class BaseQiwiException(Exception):
+    def __init__(self, qiwi_text_response, code, message):
+        super(BaseQiwiException, self).__init__(qiwi_text_response)
+        self.code = code
+        self.message = message
+
+
+class ArgumentError(BaseQiwiException):
     pass
 
 
-class InvalidToken(Exception):
+class InvalidToken(BaseQiwiException):
     pass
 
 
-class NotHaveEnoughPermissions(Exception):
+class NotHaveEnoughPermissions(BaseQiwiException):
     pass
 
 
-class NoTransaction(Exception):
+class NoTransaction(BaseQiwiException):
     pass
 
 
-class NeedPhone(Exception):
+class NeedPhone(BaseQiwiException):
     pass
 
 
-class CurrencyInvalid(Exception):
+class CurrencyInvalid(BaseQiwiException):
     pass
