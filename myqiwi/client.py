@@ -236,3 +236,7 @@ class Wallet:
 
         response = {"comment": comment, "link": link}
         return response
+
+    def check_restriction_out_payment(self):
+        path = "person-profile/v1/persons/{}/status/restrictions".format(self.number)
+        return request.send(path)
