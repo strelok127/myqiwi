@@ -20,8 +20,13 @@ def send(path, params=None, method="get", json=None):
 
     if response.status_code in [400, 401, 403, 404]:
         error_text = response.text
-        code = data["code"]
-        message = data["message"]
+
+        if "code" in data:
+            code = data["code"]
+            message = data["message"]
+        else:
+            code = data["errorCode"]
+            message = data["userMessage"]
 
         if 400 == response.status_code:
             raise exceptions.ArgumentError(error_text, code, message)
