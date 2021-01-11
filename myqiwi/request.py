@@ -1,5 +1,6 @@
 import requests
 import simplejson
+from requests.auth import HTTPProxyAuth
 
 from myqiwi import exceptions
 
@@ -9,9 +10,18 @@ headers = {}
 proxy = {}
 
 
-def send(path, params=None, method="get", json=None):
+def send(path, params=None, method="get", json=None, proxy=None):
     url = API_URl + path
-    response = requests.request(method.upper(), url, params=params, json=json, headers=headers, proxies=proxy)
+
+    if proxy is not None:
+        kwargs = {
+            "proxies": {"http": proxy["http"]},
+            "auth": HTTPProxyAuth(proxy["username"], proxy["password"])
+    }
+    else:
+        kwargs = {}
+
+    response = requests.request(method.upper(), url, params=params, json=json, headers=headers, **kwargs)
 
     try:
         data = response.json()

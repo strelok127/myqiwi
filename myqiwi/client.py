@@ -27,10 +27,14 @@ class Wallet:
         token : str
             `Ключ Qiwi API` пользователя.
         proxy : Optional[str]
-            Прокси.
-            Появится будущем...
+            Отправлять в виде:
+            proxy = {
+                {'http': '207.164.21.34:3128',
+                "username": "ggtghth",
+                "password": "ggtghth",
+                }
         """
-        request.proxy = proxy
+        self.proxy = proxy
         request.headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -65,7 +69,7 @@ class Wallet:
             Баланс кошелька.
         """
         path = "funding-sources/v2/persons/{}/accounts".format(self.number)
-        response = request.send(path)
+        response = request.send(path, proxy=self.proxy)
 
         for i in response["accounts"]:
             if int(i["currency"]) == currency:
@@ -77,8 +81,7 @@ class Wallet:
 
         return balance
 
-    @staticmethod
-    def profile():
+    def profile(self):
         """
         Профиль кошелька.
 
@@ -88,7 +91,7 @@ class Wallet:
             Много инфы.
         """
         path = "person-profile/v1/profile/current"
-        response = request.send(path)
+        response = request.send(path, proxy=self.proxy)
 
         return response
 
@@ -124,7 +127,7 @@ class Wallet:
         params = {"rows": rows}
         path = "payment-history/v2/persons/{}/payments".format(self.number)
 
-        _history = request.send(path, params=params)
+        _history = request.send(path, params=params, proxy=self.proxy)
 
         history = []
 
@@ -174,8 +177,7 @@ class Wallet:
 
         return url
 
-    @staticmethod
-    def send_money(number, _sum, comment=None, currency=643):
+    def send_money(self, number, _sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
@@ -209,7 +211,7 @@ class Wallet:
         }
 
         path = "sinap/api/v2/terms/99/payments"
-        return request.send(path, method="post", json=_json)
+        return request.send(path, method="post", json=_json, proxy=self.proxy)
 
     def search_payment(self, comment, need_sum=0, currency=643):
         payments = self.history(rows=50, currency=currency, operation="IN")
@@ -239,4 +241,4 @@ class Wallet:
 
     def check_restriction_out_payment(self):
         path = "person-profile/v1/persons/{}/status/restrictions".format(self.number)
-        return request.send(path)
+        return request.send(path, proxy=self.proxy)
