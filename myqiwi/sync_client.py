@@ -1,14 +1,11 @@
 import time
-import asyncio
-import functools
 import random_data
 
 from . import request
-from . import backend as backends
 from . import exceptions
 
 
-class AsyncWallet:
+class Wallet:
     __PAYMENT_FORM_URL = "https://qiwi.com/payment/form/"
     """ 
     This is Wallet Class
@@ -22,7 +19,7 @@ class AsyncWallet:
         gen_payment
     """
 
-    def __init__(self, token: str, proxy: dict = None,  backend = None):
+    def __init__(self, token: str, proxy: dict = None):
         """
         Visa QIWI Кошелек
         Parameters
@@ -37,16 +34,16 @@ class AsyncWallet:
                 "password": "ggtghth",
                 }
         """
-        if backend is None:
-            backend = backends.AioHttpBackEnd()
-        self.backend = backend
-
-        self.backend.proxy = proxy
-        self.backend.headers = {
+        self.proxy = proxy
+        request.headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(token),
         }
+
+        profile = self.profile()
+        self.__number = profile["contractInfo"]["contractId"]
+        self.__username = profile["contractInfo"]["nickname"]["nickname"]
 
     @property
     def number(self):
@@ -56,26 +53,21 @@ class AsyncWallet:
     def username(self):
         return self.__username
 
-
-    async def balance(self, currency=643):
+    def balance(self, currency=643):
         """
         Баланс Кошелька.
-
         Parameters
         ----------
         currency : int
             ID валюты в ``number-3 ISO-4217``.
             Например, ``643`` для российского рубля.
-
         Returns
         -------
         float
             Баланс кошелька.
         """
-        await self.need_number()
-
         path = "funding-sources/v2/persons/{}/accounts".format(self.number)
-        response = await self.backend.get(path)
+        response = request.send(path, proxy=self.proxy)
 
         for i in response["accounts"]:
             if int(i["currency"]) == currency:
@@ -87,21 +79,20 @@ class AsyncWallet:
 
         return balance
 
-    async def profile(self):
+    def profile(self):
         """
         Профиль кошелька.
-
         Returns
         -------
         dict
             Много инфы.
         """
         path = "person-profile/v1/profile/current"
-        response = await self.backend.get(path)
+        response = request.send(path, proxy=self.proxy)
 
         return response
 
-    async def history(self, rows=20, currency=None, operation=None):
+    def history(self, rows=20, currency=None, operation=None):
         """
         История платежей
         Warning
@@ -110,7 +101,6 @@ class AsyncWallet:
         не более 100 запросов в минуту
          для одного и того же номера кошелька.
         При превышении доступ к API блокируется на 5 минут.
-
         Parameters
         ----------
         rows : Optional[int]
@@ -125,14 +115,15 @@ class AsyncWallet:
             Тип операций в отчете, для отбора.
             Варианты: IN, OUT, QIWI_CARD.
             По умолчанию - ALL.
-        
+
         Returns
         -------
         dict
         """
         params = {"rows": rows}
         path = "payment-history/v2/persons/{}/payments".format(self.number)
-        _history = await self.backend.get(path)
+
+        _history = request.send(path, params=params, proxy=self.proxy)
 
         history = []
 
@@ -182,7 +173,7 @@ class AsyncWallet:
 
         return url
 
-    async def send_money(self, number, _sum, comment=None, currency=643):
+    def send_money(self, number, _sum, comment=None, currency=643):
         """
         Перевод средств на другой киви кошелёк.
         Parameters
@@ -198,7 +189,6 @@ class AsyncWallet:
             переводы.
             По умолчанию None, значит будут все переводы
             Например, 643 для российского рубля.
-
         Returns
         -------
         dict
@@ -216,7 +206,7 @@ class AsyncWallet:
         }
 
         path = "sinap/api/v2/terms/99/payments"
-        _history = await self.backend.post(path, json=_json)
+        return request.send(path, method="post", json=_json, proxy=self.proxy)
 
     def search_payment(self, comment, need_sum=0, currency=643):
         payments = self.history(rows=50, currency=currency, operation="IN")
@@ -244,15 +234,6 @@ class AsyncWallet:
         response = {"comment": comment, "link": link}
         return response
 
-    async def check_restriction_out_payment(self):
-        await self.need_number()
-
+    def check_restriction_out_payment(self):
         path = "person-profile/v1/persons/{}/status/restrictions".format(self.number)
-        return await self.backend.post(path, json=_json)
-
-    async def need_number(self):
-        if getattr(self, "number", None) is None:
-            profile = await self.profile()
-
-            self.__number = profile["contractInfo"]["contractId"]
-            self.__username = profile["contractInfo"]["nickname"]["nickname"]
+        return request.send(path, proxy=self.proxy)

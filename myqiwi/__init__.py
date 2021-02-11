@@ -1,1 +1,1 @@
-from .client import Wallet
+from .client import Wallet, AsyncWallet
