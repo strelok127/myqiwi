@@ -4,6 +4,7 @@ import pytest
 import myqiwi
 
 token = os.environ.get("QIWI_TOKEN")
+print(token)
 
 if token:
     qiwi = myqiwi.Wallet(token)
@@ -13,7 +14,7 @@ else:
 
 @pytest.mark.skipif(qiwi is None, reason="")
 def test_get_phone():
-    phone = qiwi.phone
+    phone = qiwi.number
 
     assert isinstance(phone, int)
 
