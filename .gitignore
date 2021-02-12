@@ -5,6 +5,7 @@ __pycache__/
 cd
 pip
 python
+run_tests.bat
 
 # C extensions
 *.so
